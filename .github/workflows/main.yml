@@ -47,8 +47,8 @@ jobs:
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.SIEMC_OSS }} \
-                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }}"
-                ${{ vars.GITLAB_PROJECT_URL }}
+                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }}" \
+                ${{ secrets.GITLAB_PROJECT_URL }}
   
   deploy_uncoder_os_oss:
     runs-on: ubuntu-latest
@@ -61,5 +61,5 @@ jobs:
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.UNCODER_OS_OSS }} \
-                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }}"
-                ${{ vars.GITLAB_PROJECT_URL }}
+                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }}" \
+                ${{ secrets.GITLAB_PROJECT_URL }}
