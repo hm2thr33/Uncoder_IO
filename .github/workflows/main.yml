@@ -8,7 +8,7 @@ on:
 jobs:
   build_and_push:
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
@@ -37,7 +37,7 @@ jobs:
           docker push ${{ secrets.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }}
 
   deploy_siemc_oss:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [build_and_push]
     
     steps:
@@ -51,7 +51,7 @@ jobs:
                 ${{ secrets.GITLAB_PROJECT_URL }}
   
   deploy_uncoder_os_oss:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [build_and_push]
     
     steps:
