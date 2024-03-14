@@ -30,11 +30,11 @@ jobs:
 
       - name: Build and Push Docker images
         run: |
-          docker build -t ${{ secrets.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }} uncoder-core/
-          docker push ${{ secrets.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }}
+          docker build -t ${{ secrets.ECR_REPO }}/siemc-oss.${{ github.sha }} uncoder-core/
+          docker push ${{ secrets.ECR_REPO }}/siemc-oss.${{ github.sha }}
 
-          docker build -t ${{ secrets.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }} uncoder-os/
-          docker push ${{ secrets.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }}
+          docker build -t ${{ secrets.ECR_REPO }}/uncoder-os-oss.${{ github.sha }} uncoder-os/
+          docker push ${{ secrets.ECR_REPO }}/uncoder-os-oss.${{ github.sha }}
 
   deploy_siemc_oss:
     runs-on: self-hosted
@@ -47,7 +47,7 @@ jobs:
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.SIEMC_OSS }} \
-                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }}" \
+                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/siemc-oss.${{ github.sha }}" \
                 ${{ secrets.GITLAB_PROJECT_URL }}
   
   deploy_uncoder_os_oss:
@@ -61,5 +61,5 @@ jobs:
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.UNCODER_OS_OSS }} \
-                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }}" \
+                -F "variables[IMAGE_VERSION]=${{ secrets.ECR_REPO }}/uncoder-os-oss.${{ github.sha }}" \
                 ${{ secrets.GITLAB_PROJECT_URL }}
