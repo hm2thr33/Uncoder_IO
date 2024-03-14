@@ -1,0 +1,37 @@
+name: Build and Push Docker Images to AWS ECR
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_push:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: |
+          echo ${{ secrets.AWS_ACCESS_KEY_ID }} > aws_access_key_id
+          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} > aws_secret_access_key
+          aws configure set aws_access_key_id "$(cat aws_access_key_id)"
+          aws configure set aws_secret_access_key "$(cat aws_secret_access_key)"
+          aws configure set default.region ${{ vars.AWS_DEFAULT_REGION }}
+          aws ecr get-login-password --region ${{ vars.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ vars.ECR_REPO }}
+      
+      - name: Copy .env file
+        run: |
+          echo ${{ vars.TRANSLATOR_URL }} > uncoder-os/.env
+
+      - name: Build and Push Docker images
+        run: |
+          docker build -t ${{ vars.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }} uncoder-core/
+          docker push ${{ vars.ECR_REPO }}/siemc:siemc-oss.${{ github.sha }}
+
+          docker build -t ${{ vars.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }} uncoder-os/
+          docker push ${{ vars.ECR_REPO }}/uncoder-os:uncoder-os-oss.${{ github.sha }}
