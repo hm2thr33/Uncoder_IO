@@ -17,8 +17,8 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         run: |
-          echo ${{ secrets.AWS_ACCESS_KEY_ID }} | base64 --decode > aws_access_key_id
-          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} | base64 --decode > aws_secret_access_key
+          echo ${{ secrets.AWS_ACCESS_KEY_ID }} > aws_access_key_id
+          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} > aws_secret_access_key
           aws configure set aws_access_key_id "$(cat aws_access_key_id)"
           aws configure set aws_secret_access_key "$(cat aws_secret_access_key)"
           aws configure set default.region ${{ vars.AWS_DEFAULT_REGION }}
