@@ -47,7 +47,7 @@ jobs:
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.SIEMC_OSS }} \
-                -F "variables[IMAGE_VERSION]=siemc:oss.${{ github.sha }}" \
+                -F "variables[IMAGE_VERSION]=oss.${{ github.sha }}" \
                 ${{ secrets.GITLAB_PROJECT_URL }}
   
   deploy_uncoder_os_oss:
@@ -61,5 +61,5 @@ jobs:
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.UNCODER_OS_OSS }} \
-                -F "variables[IMAGE_VERSION]=uncoder-os:oss.${{ github.sha }}" \
+                -F "variables[IMAGE_VERSION]=oss.${{ github.sha }}" \
                 ${{ secrets.GITLAB_PROJECT_URL }}
