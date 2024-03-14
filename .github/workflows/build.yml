@@ -26,8 +26,8 @@ jobs:
         
       - name: Build and Push Docker images
         run: |
-          docker build -t ${{ vars.ECR_REPO }}/translator translator/
-          docker push ${{ vars.ECR_REPO }}/translator.${{ github.sha }}
+          docker build -t ${{ vars.ECR_REPO }}/siemc uncoder-core/
+          docker push ${{ vars.ECR_REPO }}/siemc.${{ github.sha }}
 
           docker build -t ${{ vars.ECR_REPO }}/uncoder-os uncoder-os/
           docker push ${{ vars.ECR_REPO }}/uncoder-os.${{ github.sha }}
