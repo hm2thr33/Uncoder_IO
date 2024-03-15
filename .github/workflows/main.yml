@@ -37,6 +37,7 @@ jobs:
           docker push ${{ secrets.ECR_REPO }}/uncoder-os:oss.${{ github.sha }}
 
   deploy_siemc_oss:
+    timeout-minutes: 5
     runs-on: self-hosted
     needs: [build_and_push]
     
@@ -51,6 +52,7 @@ jobs:
                 ${{ secrets.GITLAB_PROJECT_URL }}
   
   deploy_uncoder_os_oss:
+    timeout-minutes: 5
     runs-on: self-hosted
     needs: [build_and_push]
     
