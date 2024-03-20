@@ -44,7 +44,7 @@ jobs:
     steps:
       - name: Trigger GitLab Pipeline
         run: |
-            curl -X POST \
+            curl -s -o /dev/null -X POST \
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.SIEMC_OSS }} \
@@ -59,7 +59,7 @@ jobs:
     steps:
       - name: Trigger GitLab Pipeline
         run: |
-            curl -X POST \
+            curl -s -o /dev/null -X POST \
                 --fail \
                 -F token=${{ secrets.GITLAB_TOKEN }} \
                 -F ref=${{ secrets.UNCODER_OS_OSS }} \
