@@ -6,62 +6,75 @@ on:
       - main
 
 jobs:
-  build_and_push:
-    timeout-minutes: 10
-    runs-on: self-hosted
+  # build_and_push:
+  #   timeout-minutes: 10
+  #   runs-on: self-hosted
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v2
       
-      - name: Login to Amazon ECR
-        id: login-ecr
-        run: |
-          echo ${{ secrets.AWS_ACCESS_KEY_ID }} > aws_access_key_id
-          echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} > aws_secret_access_key
-          aws configure set aws_access_key_id "$(cat aws_access_key_id)"
-          aws configure set aws_secret_access_key "$(cat aws_secret_access_key)"
-          aws configure set default.region ${{ secrets.AWS_DEFAULT_REGION }}
-          aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO }}
+  #     - name: Login to Amazon ECR
+  #       id: login-ecr
+  #       run: |
+  #         echo ${{ secrets.AWS_ACCESS_KEY_ID }} > aws_access_key_id
+  #         echo ${{ secrets.AWS_SECRET_ACCESS_KEY }} > aws_secret_access_key
+  #         aws configure set aws_access_key_id "$(cat aws_access_key_id)"
+  #         aws configure set aws_secret_access_key "$(cat aws_secret_access_key)"
+  #         aws configure set default.region ${{ secrets.AWS_DEFAULT_REGION }}
+  #         aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO }}
       
-      - name: Copy .env file
-        run: |
-          echo ${{ secrets.TRANSLATOR_URL }} > uncoder-os/.env
+  #     - name: Copy .env file
+  #       run: |
+  #         echo ${{ secrets.TRANSLATOR_URL }} > uncoder-os/.env
 
-      - name: Build and Push Docker images
-        run: |
-          docker build -t ${{ secrets.ECR_REPO }}/siemc:oss.${{ github.sha }} uncoder-core/
-          docker push ${{ secrets.ECR_REPO }}/siemc:oss.${{ github.sha }}
+  #     - name: Build and Push Docker images
+  #       run: |
+  #         docker build -t ${{ secrets.ECR_REPO }}/siemc:oss.${{ github.sha }} uncoder-core/
+  #         docker push ${{ secrets.ECR_REPO }}/siemc:oss.${{ github.sha }}
 
-          docker build -t ${{ secrets.ECR_REPO }}/uncoder-os:oss.${{ github.sha }} uncoder-os/
-          docker push ${{ secrets.ECR_REPO }}/uncoder-os:oss.${{ github.sha }}
+  #         docker build -t ${{ secrets.ECR_REPO }}/uncoder-os:oss.${{ github.sha }} uncoder-os/
+  #         docker push ${{ secrets.ECR_REPO }}/uncoder-os:oss.${{ github.sha }}
 
-  deploy_siemc_oss:
-    timeout-minutes: 5
-    runs-on: self-hosted
-    needs: [build_and_push]
+  # deploy_siemc_oss:
+  #   timeout-minutes: 5
+  #   runs-on: self-hosted
+  #   needs: [build_and_push]
     
-    steps:
-      - name: Trigger GitLab Pipeline
-        run: |
-            curl -s -o /dev/null -X POST \
-                --fail \
-                -F token=${{ secrets.GITLAB_TOKEN }} \
-                -F ref=${{ secrets.SIEMC_OSS }} \
-                -F "variables[IMAGE_VERSION]=oss.${{ github.sha }}" \
-                ${{ secrets.GITLAB_PROJECT_URL }}
+  #   steps:
+  #     - name: Trigger GitLab Pipeline
+  #       run: |
+  #           curl -s -o /dev/null -X POST \
+  #               --fail \
+  #               -F token=${{ secrets.GITLAB_TOKEN }} \
+  #               -F ref=${{ secrets.SIEMC_OSS }} \
+  #               -F "variables[IMAGE_VERSION]=oss.${{ github.sha }}" \
+  #               ${{ secrets.GITLAB_PROJECT_URL }}
   
-  deploy_uncoder_os_oss:
+  # deploy_uncoder_os_oss:
+  #   timeout-minutes: 5
+  #   runs-on: self-hosted
+  #   needs: [build_and_push]
+    
+  #   steps:
+  #     - name: Trigger GitLab Pipeline
+  #       run: |
+  #           curl -s -o /dev/null -X POST \
+  #               --fail \
+  #               -F token=${{ secrets.GITLAB_TOKEN }} \
+  #               -F ref=${{ secrets.UNCODER_OS_OSS }} \
+  #               -F "variables[IMAGE_VERSION]=oss.${{ github.sha }}" \
+  #               ${{ secrets.GITLAB_PROJECT_URL }}
+
+  deploy_uncoder_os:
     timeout-minutes: 5
     runs-on: self-hosted
-    needs: [build_and_push]
     
     steps:
       - name: Trigger GitLab Pipeline
         run: |
             curl -s -o /dev/null -X POST \
                 --fail \
-                -F token=${{ secrets.GITLAB_TOKEN }} \
-                -F ref=${{ secrets.UNCODER_OS_OSS }} \
-                -F "variables[IMAGE_VERSION]=oss.${{ github.sha }}" \
-                ${{ secrets.GITLAB_PROJECT_URL }}
+                -F token=${{ secrets.GITLAB_UNCODER_TOKEN }} \
+                -F ref=${{ secrets.GITLAB_UNCODER_REF }} \
+                ${{ secrets.GITLAB_UNCODER_PROJECT_URL }}
