@@ -16,8 +16,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -----------------------------------------------------------------
 """
-
 from app.translator.core.models.platform_details import PlatformDetails
+from app.translator.managers import render_manager
 from app.translator.platforms.base.spl.renders.spl import SplFieldValue, SplQueryRender
 from app.translator.platforms.crowdstrike.const import crowdstrike_query_details
 from app.translator.platforms.crowdstrike.functions import CrowdStrikeFunctions, crowd_strike_functions
@@ -28,6 +28,7 @@ class CrowdStrikeFieldValue(SplFieldValue):
     details = crowdstrike_query_details
 
 
+@render_manager.register
 class CrowdStrikeQueryRender(SplQueryRender):
     details: PlatformDetails = crowdstrike_query_details
     query_pattern = "{prefix} {query} {functions}"
@@ -40,4 +41,4 @@ class CrowdStrikeQueryRender(SplQueryRender):
 
     def __init__(self):
         super().__init__()
-        self.platform_functions.manager.init_search_func_render(self)
+        self.platform_functions.manager.post_init_configure(self)

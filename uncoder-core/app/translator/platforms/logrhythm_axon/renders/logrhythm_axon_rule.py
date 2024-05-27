@@ -24,6 +24,7 @@ from app.translator.core.custom_types.meta_info import SeverityType
 from app.translator.core.mapping import SourceMapping
 from app.translator.core.models.platform_details import PlatformDetails
 from app.translator.core.models.query_container import MetaInfoContainer
+from app.translator.managers import render_manager
 from app.translator.platforms.logrhythm_axon.const import DEFAULT_LOGRHYTHM_AXON_RULE, logrhythm_axon_rule_details
 from app.translator.platforms.logrhythm_axon.escape_manager import logrhythm_rule_escape_manager
 from app.translator.platforms.logrhythm_axon.renders.logrhythm_axon_query import (
@@ -47,6 +48,7 @@ class LogRhythmAxonRuleFieldValue(LogRhythmAxonFieldValue):
     escape_manager = logrhythm_rule_escape_manager
 
 
+@render_manager.register
 class LogRhythmAxonRuleRender(LogRhythmAxonQueryRender):
     details: PlatformDetails = logrhythm_axon_rule_details
     or_token = "or"
@@ -84,9 +86,9 @@ class LogRhythmAxonRuleRender(LogRhythmAxonQueryRender):
             rule["observationPipeline"]["metadataFields"]["threat.mitre_technique"] = ", ".join(
                 f"{i['technique_id']}:{i['technique']}" for i in sorted(techniques, key=lambda x: x["technique_id"])
             )
-        if meta_info.fields:
+        if meta_info.output_table_fields:
             rule["observationPipeline"]["pattern"]["operations"][0]["logObserved"]["groupByFields"] = [
-                self.map_field(field, source_mapping)[0] for field in meta_info.fields
+                self.map_field(field, source_mapping)[0] for field in meta_info.output_table_fields
             ]
 
         json_rule = json.dumps(rule, indent=4, sort_keys=False)

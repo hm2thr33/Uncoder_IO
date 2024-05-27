@@ -130,7 +130,7 @@ field_mapping:
   c-uri: object.url.complete
   c-uri-extension: object.url.type
   c-uri-query: object.url.query
-  c-uri-stem: object.url.complete
+  c-uri-stem: object.url.path
   c-useragent: action.user_agent
   cs-host:
     - target.host.name
@@ -175,7 +175,7 @@ field_mapping:
   c-ip: origin.host.ip_address.value
   cs-uri: object.url.path
   cs-uri-query: object.url.query
-  cs-uri-stem: object.url.complete
+  cs-uri-stem: object.url.path
   clientip: origin.host.ip_address.value
   clientIP: origin.host.ip_address.value
   dest_domain:
@@ -302,3 +302,8 @@ field_mapping:
   blocked:
     - action.message
     - action.result.reason
+  cs-ip: origin.host.ip_address.value
+  SubjectLogonId: action.session.id
+  SubjectUserName: origin.account.name
+  SubjectUserSid: origin.account.id
+  SubjectDomainName: origin.account.domain

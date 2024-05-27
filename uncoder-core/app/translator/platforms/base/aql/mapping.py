@@ -3,17 +3,15 @@ from typing import Optional
 from app.translator.core.mapping import DEFAULT_MAPPING_NAME, BasePlatformMappings, LogSourceSignature, SourceMapping
 
 
-class QradarLogSourceSignature(LogSourceSignature):
+class AQLLogSourceSignature(LogSourceSignature):
     def __init__(
         self,
-        tables: Optional[list[str]],
         device_types: Optional[list[int]],
         categories: Optional[list[int]],
         qids: Optional[list[int]],
         qid_event_categories: Optional[list[int]],
         default_source: dict,
     ):
-        self.tables = set(tables or [])
         self.device_types = set(device_types or [])
         self.categories = set(categories or [])
         self.qids = set(qids or [])
@@ -22,19 +20,21 @@ class QradarLogSourceSignature(LogSourceSignature):
 
     def is_suitable(
         self,
-        table: list[str],
         devicetype: Optional[list[int]],
         category: Optional[list[int]],
         qid: Optional[list[int]],
         qideventcategory: Optional[list[int]],
     ) -> bool:
-        table_match = set(table).issubset(self.tables)
-        device_type_match = set(devicetype or []).issubset(self.device_types)
-        category_match = set(category or []).issubset(self.categories)
-        qid_match = set(qid or []).issubset(self.qids)
-        qid_event_category_match = set(qideventcategory or []).issubset(self.qid_event_categories)
-
-        return table_match and device_type_match and category_match and qid_match and qid_event_category_match
+        device_type_match = set(devicetype).issubset(self.device_types) if devicetype else None
+        category_match = set(category).issubset(self.categories) if category else None
+        qid_match = set(qid).issubset(self.qids) if qid else None
+        qid_event_category_match = set(qideventcategory).issubset(self.qid_event_categories) if qideventcategory else None
+        return all(
+            condition for condition in (
+                device_type_match, category_match,
+                qid_match, qid_event_category_match)
+            if condition is not None
+        )
 
     def __str__(self) -> str:
         return self._default_source.get("table", "events")
@@ -45,12 +45,11 @@ class QradarLogSourceSignature(LogSourceSignature):
         return " AND ".join((f"{key}={value}" for key, value in default_source.items() if key != "table" and value))
 
 
-class QradarMappings(BasePlatformMappings):
-    def prepare_log_source_signature(self, mapping: dict) -> QradarLogSourceSignature:
+class AQLMappings(BasePlatformMappings):
+    def prepare_log_source_signature(self, mapping: dict) -> AQLLogSourceSignature:
         log_source = mapping.get("log_source", {})
         default_log_source = mapping["default_log_source"]
-        return QradarLogSourceSignature(
-            tables=log_source.get("table"),
+        return AQLLogSourceSignature(
             device_types=log_source.get("devicetype"),
             categories=log_source.get("category"),
             qids=log_source.get("qid"),
@@ -61,7 +60,6 @@ class QradarMappings(BasePlatformMappings):
     def get_suitable_source_mappings(
         self,
         field_names: list[str],
-        table: list[str],
         devicetype: Optional[list[int]] = None,
         category: Optional[list[int]] = None,
         qid: Optional[list[int]] = None,
@@ -72,12 +70,17 @@ class QradarMappings(BasePlatformMappings):
             if source_mapping.source_id == DEFAULT_MAPPING_NAME:
                 continue
 
-            log_source_signature: QradarLogSourceSignature = source_mapping.log_source_signature
-            if table and log_source_signature.is_suitable(table, devicetype, category, qid, qideventcategory):
+            log_source_signature: AQLLogSourceSignature = source_mapping.log_source_signature
+            if log_source_signature.is_suitable(devicetype, category, qid, qideventcategory):
                 if source_mapping.fields_mapping.is_suitable(field_names):
                     suitable_source_mappings.append(source_mapping)
-            elif source_mapping.fields_mapping.is_suitable(field_names):
-                suitable_source_mappings.append(source_mapping)
+
+        if not suitable_source_mappings:
+            for source_mapping in self._source_mappings.values():
+                if source_mapping.source_id == DEFAULT_MAPPING_NAME:
+                    continue
+                if source_mapping.fields_mapping.is_suitable(field_names):
+                    suitable_source_mappings.append(source_mapping)
 
         if not suitable_source_mappings:
             suitable_source_mappings = [self._source_mappings[DEFAULT_MAPPING_NAME]]
@@ -85,4 +88,4 @@ class QradarMappings(BasePlatformMappings):
         return suitable_source_mappings
 
 
-qradar_mappings = QradarMappings(platform_dir="qradar")
+aql_mappings = AQLMappings(platform_dir="qradar")

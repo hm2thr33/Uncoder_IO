@@ -16,79 +16,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -----------------------------------------------------------------
 """
-from typing import Union
-
-from app.translator.const import DEFAULT_VALUE_TYPE
-from app.translator.core.exceptions.render import UnsupportedRenderMethod
-from app.translator.core.mapping import LogSourceSignature
 from app.translator.core.models.platform_details import PlatformDetails
-from app.translator.core.render import BaseQueryFieldValue, PlatformQueryRender
+from app.translator.managers import render_manager
 from app.translator.platforms.athena.const import athena_details
 from app.translator.platforms.athena.mapping import AthenaMappings, athena_mappings
+from app.translator.platforms.base.sql.renders.sql import SqlFieldValue, SqlQueryRender
 
 
-class AthenaFieldValue(BaseQueryFieldValue):
+class AthenaFieldValue(SqlFieldValue):
     details: PlatformDetails = athena_details
 
-    def equal_modifier(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:
-        if isinstance(value, list):
-            return f"({self.or_token.join([self.equal_modifier(field=field, value=v) for v in value])})"
-        return f"{field} = '{value}'"
 
-    def less_modifier(self, field: str, value: Union[int, str]) -> str:
-        return f"{field} < '{value}'"
-
-    def less_or_equal_modifier(self, field: str, value: Union[int, str]) -> str:
-        return f"{field} <= '{value}'"
-
-    def greater_modifier(self, field: str, value: Union[int, str]) -> str:
-        return f"{field} > '{value}'"
-
-    def greater_or_equal_modifier(self, field: str, value: Union[int, str]) -> str:
-        return f"{field} >= '{value}'"
-
-    def not_equal_modifier(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:
-        if isinstance(value, list):
-            return f"({self.or_token.join([self.not_equal_modifier(field=field, value=v) for v in value])})"
-        return f"{field} != '{value}'"
-
-    def contains_modifier(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:
-        if isinstance(value, list):
-            return f"({self.or_token.join(self.contains_modifier(field=field, value=v) for v in value)})"
-        return f"{field} ILIKE '%{value}%'  ESCAPE '\\'"
-
-    def endswith_modifier(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:
-        if isinstance(value, list):
-            return f"({self.or_token.join(self.endswith_modifier(field=field, value=v) for v in value)})"
-        return f"{field} ILIKE '%{value}'  ESCAPE '\\'"
-
-    def startswith_modifier(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:
-        if isinstance(value, list):
-            return f"({self.or_token.join(self.startswith_modifier(field=field, value=v) for v in value)})"
-        return f"{field} ILIKE '{value}%'  ESCAPE '\\'"
-
-    def regex_modifier(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:
-        if isinstance(value, list):
-            return f"({self.or_token.join(self.regex_modifier(field=field, value=v) for v in value)})"
-        return f"{field} ILIKE '{value}'  ESCAPE '\\'"
-
-    def keywords(self, field: str, value: DEFAULT_VALUE_TYPE) -> str:  # noqa: ARG002
-        raise UnsupportedRenderMethod(platform_name=self.details.name, method="Keywords")
-
-
-class AthenaQueryRender(PlatformQueryRender):
+@render_manager.register
+class AthenaQueryRender(SqlQueryRender):
     details: PlatformDetails = athena_details
     mappings: AthenaMappings = athena_mappings
 
     or_token = "OR"
-    and_token = "AND"
-    not_token = "NOT"
 
     field_value_map = AthenaFieldValue(or_token=or_token)
     query_pattern = "{prefix} WHERE {query} {functions}"
     comment_symbol = "--"
-    is_multi_line_comment = True
-
-    def generate_prefix(self, log_source_signature: LogSourceSignature) -> str:
-        table = str(log_source_signature) if str(log_source_signature) else "eventlog"
-        return f"SELECT * FROM {table}"
+    is_single_line_comment = True

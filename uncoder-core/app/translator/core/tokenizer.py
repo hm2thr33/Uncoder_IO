@@ -31,6 +31,8 @@ from app.translator.core.exceptions.parser import (
 from app.translator.core.mapping import SourceMapping
 from app.translator.core.models.field import Field, FieldValue, Keyword
 from app.translator.core.models.functions.base import Function
+from app.translator.core.models.functions.eval import EvalArg
+from app.translator.core.models.functions.rename import RenameArg
 from app.translator.core.models.functions.sort import SortArg
 from app.translator.core.models.identifier import Identifier
 from app.translator.core.str_value_manager import StrValue, StrValueManager
@@ -50,6 +52,8 @@ class QueryTokenizer(BaseTokenizer):
     single_value_operators_map: ClassVar[dict[str, str]] = {}
     # used to generate re pattern. so the keys order is important
     multi_value_operators_map: ClassVar[dict[str, str]] = {}
+    # used to generate re pattern. so the keys order is important
+    fields_operator_map: ClassVar[dict[str, str]] = {}
     operators_map: ClassVar[dict[str, str]] = {}  # used to generate re pattern. so the keys order is important
 
     logical_operator_pattern = r"^(?P<logical_operator>and|or|not|AND|OR|NOT)\s+"
@@ -71,7 +75,11 @@ class QueryTokenizer(BaseTokenizer):
     def __init_subclass__(cls, **kwargs):
         cls._validate_re_patterns()
         cls.value_pattern = cls.base_value_pattern.replace("___value_pattern___", cls._value_pattern)
-        cls.operators_map = {**cls.single_value_operators_map, **cls.multi_value_operators_map}
+        cls.operators_map = {
+            **cls.single_value_operators_map,
+            **cls.multi_value_operators_map,
+            **cls.fields_operator_map,
+        }
         cls.operator_pattern = rf"""(?:___field___\s*(?P<operator>(?:{'|'.join(cls.operators_map)})))\s*"""
 
     @classmethod
@@ -323,6 +331,11 @@ class QueryTokenizer(BaseTokenizer):
                 result.extend(self.get_field_tokens_from_func_args(args=arg.by_clauses))
             elif isinstance(arg, SortArg):
                 result.append(arg.field)
+            elif isinstance(arg, RenameArg):
+                result.append(arg.field_)
+            elif isinstance(arg, EvalArg):
+                result.append(arg.field_)
+                result.extend(self.get_field_tokens_from_func_args(args=arg.expression))
         return result
 
     @staticmethod

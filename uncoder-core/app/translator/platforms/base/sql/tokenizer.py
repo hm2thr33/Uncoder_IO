@@ -21,15 +21,13 @@ from typing import Any, ClassVar, Union
 
 from app.translator.core.custom_types.tokens import OperatorType
 from app.translator.core.custom_types.values import ValueType
-from app.translator.core.models.field import FieldValue, Keyword
+from app.translator.core.models.field import FieldValue
 from app.translator.core.models.identifier import Identifier
 from app.translator.core.tokenizer import QueryTokenizer
-from app.translator.platforms.qradar.const import NUM_VALUE_PATTERN, SINGLE_QUOTES_VALUE_PATTERN, UTF8_PAYLOAD_PATTERN
-from app.translator.platforms.qradar.escape_manager import qradar_escape_manager
 from app.translator.tools.utils import get_match_group
 
 
-class QradarTokenizer(QueryTokenizer):
+class SqlTokenizer(QueryTokenizer):
     single_value_operators_map: ClassVar[dict[str, str]] = {
         "=": OperatorType.EQ,
         "<=": OperatorType.LTE,
@@ -37,49 +35,43 @@ class QradarTokenizer(QueryTokenizer):
         ">=": OperatorType.GTE,
         ">": OperatorType.GT,
         "!=": OperatorType.NOT_EQ,
+        "<>": OperatorType.NOT_EQ,
         "like": OperatorType.EQ,
-        "ilike": OperatorType.EQ,
-        "matches": OperatorType.REGEX,
-        "imatches": OperatorType.REGEX,
     }
     multi_value_operators_map: ClassVar[dict[str, str]] = {"in": OperatorType.EQ}
 
     field_pattern = r'(?P<field_name>"[a-zA-Z\._\-\s]+"|[a-zA-Z\._\-]+)'
+    num_value_pattern = rf"(?P<{ValueType.number_value}>\d+(?:\.\d+)*)\s*"
     bool_value_pattern = rf"(?P<{ValueType.bool_value}>true|false)\s*"
-    _value_pattern = rf"{NUM_VALUE_PATTERN}|{bool_value_pattern}|{SINGLE_QUOTES_VALUE_PATTERN}"
-    multi_value_pattern = rf"""\((?P<{ValueType.multi_value}>[:a-zA-Z\"\*0-9=+%#\-_\/\\'\,.&^@!\(\s]*)\)"""
-    keyword_pattern = rf"{UTF8_PAYLOAD_PATTERN}\s+(?:like|LIKE|ilike|ILIKE)\s+{SINGLE_QUOTES_VALUE_PATTERN}"
-    escape_manager = qradar_escape_manager
+    single_quotes_value_pattern = (
+        rf"""'(?P<{ValueType.single_quotes_value}>(?:[:a-zA-Z\*0-9=+%#\-\/\\,_".$&^@!\(\)\{{\}}\s]|'')*)'"""
+    )
+    _value_pattern = rf"{num_value_pattern}|{bool_value_pattern}|{single_quotes_value_pattern}"
+    multi_value_pattern = rf"""\((?P<{ValueType.multi_value}>\d+(?:,\s*\d+)*|'(?:[:a-zA-Z\*0-9=+%#\-\/\\,_".$&^@!\(\)\{{\}}\s]|'')*'(?:,\s*'(?:[:a-zA-Z\*0-9=+%#\-\/\\,_".$&^@!\(\)\{{\}}\s]|'')*')*)\)"""  # noqa: E501
 
     wildcard_symbol = "%"
 
     @staticmethod
     def should_process_value_wildcards(operator: str) -> bool:
-        return operator.lower() in ("like", "ilike")
+        return operator.lower() in ("like",)
 
     def get_operator_and_value(self, match: re.Match, operator: str = OperatorType.EQ) -> tuple[str, Any]:
         if (num_value := get_match_group(match, group_name=ValueType.number_value)) is not None:
             return operator, num_value
 
         if (bool_value := get_match_group(match, group_name=ValueType.bool_value)) is not None:
-            return operator, self.escape_manager.remove_escape(bool_value)
+            return operator, bool_value
 
         if (s_q_value := get_match_group(match, group_name=ValueType.single_quotes_value)) is not None:
-            return operator, self.escape_manager.remove_escape(s_q_value)
+            return operator, s_q_value
 
         return super().get_operator_and_value(match, operator)
-
-    def escape_field_name(self, field_name: str) -> str:
-        return field_name.replace('"', r"\"").replace(" ", r"\ ")
 
     @staticmethod
     def create_field_value(field_name: str, operator: Identifier, value: Union[str, list]) -> FieldValue:
         field_name = field_name.strip('"')
         return FieldValue(source_name=field_name, operator=operator, value=value)
 
-    def search_keyword(self, query: str) -> tuple[Keyword, str]:
-        keyword_search = re.search(self.keyword_pattern, query)
-        _, value = self.get_operator_and_value(keyword_search)
-        keyword = Keyword(value=value.strip(self.wildcard_symbol))
-        pos = keyword_search.end()
-        return keyword, query[pos:]
+    def tokenize(self, query: str) -> list:
+        query = re.sub(r"\s*ESCAPE\s*'.'", "", query)  # remove `ESCAPE 'escape_char'` in LIKE expr
+        return super().tokenize(query)
