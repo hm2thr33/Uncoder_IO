@@ -1,6 +1,6 @@
 platform: Qradar
 source: linux_process_creation
-description: Text that describe current mapping
+
 
 log_source:
   devicetype: [11]
@@ -15,3 +15,5 @@ field_mapping:
   Image: Process Path
   ParentCommandLine: Parent Command
   ParentImage: Parent Process Path
+  User: username
+  LogonId: Logon ID
